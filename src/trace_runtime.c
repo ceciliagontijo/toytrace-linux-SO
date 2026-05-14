@@ -36,38 +36,48 @@ static void fill_event_from_regs(pid_t pid,
 
 static pid_t launch_tracee(char *const argv[])
 {
-    /*
-     * TODO Semana 2:
-     *
-     * Crie o processo monitorado.
-     *
-     * Fluxo esperado:
-     * - fork()
-     * - no filho:
-     *   - ptrace(PTRACE_TRACEME, ...)
-     *   - raise(SIGSTOP)
-     *   - execvp(argv[0], argv)
-     * - no pai:
-     *   - retornar o pid do filho
-     *
-     * Em erro, imprima uma mensagem com perror() e retorne -1.
-     */
-    fprintf(stderr, "erro: TODO Semana 2: implementar launch_tracee()\n");
-    return -1;
+    pid_t filho = fork();
+    	
+	if(filho<0)
+	{
+		perror("Erro no fork");
+		return -1;
+	}
+    else{
+	if (filho == 0)
+	  {
+		
+		if(ptrace(PTRACE_TRACEME, 0, NULL, NULL) <0 ){
+		perror("Erro no ptrace");
+		return -1;
+		}
+		raise(SIGSTOP);
+		execvp(argv[0], argv);
+		perror("Erro no exec");
+		return -1;
+	  }
+     	else 
+	{
+		return filho;
+	}
+     }
+     
 }
 
 static int wait_for_initial_stop(pid_t child)
 {
-    /*
-     * TODO Semana 2:
-     *
-     * O filho chama raise(SIGSTOP) antes de executar o programa alvo.
-     * O pai precisa esperar essa parada inicial com waitpid().
-     *
-     * Retorne 0 se o filho parou como esperado, -1 em erro.
-     */
-    fprintf(stderr, "erro: TODO Semana 2: implementar wait_for_initial_stop()\n");
-    return -1;
+     int status;
+
+     waitpid(child, &status, 0);
+     
+     if(WIFSTOPPED(status))
+     {
+        return 0;
+     }
+     else
+     {
+        return -1;
+     }
 }
 
 static int configure_trace_options(pid_t child)
