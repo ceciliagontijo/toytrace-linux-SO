@@ -179,7 +179,7 @@ int trace_program(char *const argv[],
             perror("Erro PTRACE_GETREGS");
             return -1;
         }
-        memset(&regs, 0, sizeof(regs));
+        //memset(&regs, 0, sizeof(regs));
         fill_event_from_regs(child, entering, &regs, &ev);
         if (observer != NULL) {
             observer(&ev, userdata);
