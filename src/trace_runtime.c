@@ -107,22 +107,21 @@ static int resume_until_next_syscall(pid_t child, int signal_to_deliver)
 
 static int wait_for_syscall_stop(pid_t child, int *status)
 {
-    while (1) {
-        if (waitpid(child, status, 0) < 0) {
-            perror("Erro no waitpid");
-            return -1;
-        }
-
-        if (WIFEXITED(*status) || WIFSIGNALED(*status)) {
-            return 0;
-        }
-
-        if (WIFSTOPPED(*status) && WSTOPSIG(*status) & 0x80) {
-            return 1;
-        }
-    
-        ptrace(PTRACE_SYSCALL, child, NULL, 0);
+    if(waitpid(child, status, 0) < 0)
+    {
+        perror("Erro no waitpid");
+        return -1;
     }
+
+    if(WIFEXITED(*status) || WIFSIGNALED(*status))
+    {
+        return 0;
+    }
+
+    if(WIFSTOPPED(*status) && WSTOPSIG(*status) & 0x80)
+    {
+        return 1;
+    }  
 }
 
 
