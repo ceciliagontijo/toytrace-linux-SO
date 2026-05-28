@@ -1,6 +1,7 @@
 #include "student_api.h"
 
 #include "syscall_names.h"
+#include "trace_helpers.h"
 
 #include <stdio.h>
 
@@ -39,28 +40,67 @@ void student_format_event(const struct syscall_event *ev,
                           char *buf,
                           size_t bufsz)
 {
-    /*
-     * TODO Semana 5:
-     *
-     * Primeiro, formate uma syscall completa em uma linha simples.
-     *
-     * Depois, adicione casos especiais para:
-     *     read(fd, buf, count)
-     *     write(fd, buf, count)
-     *     openat(dirfd, "path", flags, mode)
-     *     execve("path", ...)
-     *     exit_group(status)
-     *
-     * Para caminhos do processo monitorado, use read_child_string().
-     * Se a leitura falhar, imprima "<ilegivel>".
-     */
-    snprintf(buf, bufsz, "%s(%#lx, %#lx, %#lx, %#lx, %#lx, %#lx) = %ld",
-             syscall_name(ev->syscall_no),
-             ev->args[0],
-             ev->args[1],
-             ev->args[2],
-             ev->args[3],
-             ev->args[4],
-             ev->args[5],
-             ev->ret);
+
+    long syscall = ev->syscall_no;
+
+    if (syscall == 0) {
+        /* read — você escreve aqui */
+        snprintf(buf, bufsz, "read(%ld, %#lx, %ld) = %ld",
+         ev->args[0],   /* fd    → número */
+         ev->args[1],   /* buf   → ponteiro */
+         ev->args[2],   /* count → número */
+         ev->ret);      /* retorno */
+
+    } else if (syscall == 1) {
+        /* write — você escreve aqui */
+        snprintf(buf, bufsz,"write(%ld, %#lx, %ld) = %ld",
+         ev->args[0],   
+         ev->args[1],   
+         ev->args[2],   
+         ev->ret);      
+
+    } else if (syscall == 257) {
+        /* openat — você escreve aqui, precisa do read_child_string */
+         char path[256];  // buffer local para guardar o caminho
+    
+        // lê a string que está na memória do processo filho
+        // args[1] é o SEGUNDO argumento = o caminho do arquivo
+        // (args[0] é o dirfd, que é só um número)
+        if (read_child_string(ev->pid, ev->args[1], path, sizeof(path)) < 0)
+            snprintf(path, sizeof(path), "<ilegivel>"); // se falhar, coloca isso
+        
+        snprintf(buf, bufsz, "openat(%ld, \"%s\", %#lx, %#lx) = %ld",
+                ev->args[0],  // dirfd → número
+                path,         // caminho que lemos → string
+                ev->args[2],  // flags → hex
+                ev->args[3],  // mode  → hex
+                ev->ret);     // retorno
+    
+
+    } else if (syscall == 59) {
+        /* execve — você escreve aqui, precisa do read_child_string */
+            char path[256];
+
+        if (read_child_string(ev->pid, ev->args[0], path, sizeof(path)) < 0)
+        snprintf(path, sizeof(path), "<ilegivel>"); // se falhar, coloca isso
+    
+        snprintf(buf, bufsz, "execve(\"%s\", ...) = %ld",
+                path,      // o caminho que lemos
+                ev->ret);  // retorno
+
+    } else if (syscall == 231) {
+        /* exit_group — você escreve aqui */
+         snprintf(buf, bufsz, "exit_group(%ld)",
+             ev->args[0]);
+
+    } else {
+        /* genérico — esse você já tem! */
+        snprintf(buf, bufsz, "%s(%#lx, %#lx, %#lx, %#lx, %#lx, %#lx) = %ld",
+                 syscall_name(ev->syscall_no),
+                 ev->args[0], ev->args[1], ev->args[2],
+                 ev->args[3], ev->args[4], ev->args[5],
+                 ev->ret);
+    }
+
+
 }
