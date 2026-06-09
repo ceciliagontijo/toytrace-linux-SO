@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+extern char saved_execve_path[];  // ← acessa a variável do pairer.c
+
 void student_debug_raw_event(const struct syscall_event *ev,
                              char *buf,
                              size_t bufsz)
@@ -43,7 +45,7 @@ void student_format_event(const struct syscall_event *ev,
 
     long syscall = ev->syscall_no;
 
-    if (syscall == 0) {
+    if (syscall == SYS_read) {
         /* read — você escreve aqui */
         snprintf(buf, bufsz, "read(%ld, %#lx, %ld) = %ld",
          ev->args[0],   /* fd    → número */
@@ -51,7 +53,7 @@ void student_format_event(const struct syscall_event *ev,
          ev->args[2],   /* count → número */
          ev->ret);      /* retorno */
 
-    } else if (syscall == 1) {
+    } else if (syscall == SYS_write) {
         /* write — você escreve aqui */
         snprintf(buf, bufsz,"write(%ld, %#lx, %ld) = %ld",
          ev->args[0],   
@@ -59,7 +61,7 @@ void student_format_event(const struct syscall_event *ev,
          ev->args[2],   
          ev->ret);      
 
-    } else if (syscall == 257) {
+    } else if (syscall == SYS_openat) {
         /* openat — você escreve aqui, precisa do read_child_string */
          char path[256];  // buffer local para guardar o caminho
     
@@ -77,18 +79,13 @@ void student_format_event(const struct syscall_event *ev,
                 ev->ret);     // retorno
     
 
-    } else if (syscall == 59) {
+    } else if (syscall == SYS_execve) {
         /* execve — você escreve aqui, precisa do read_child_string */
-            char path[256];
-
-        if (read_child_string(ev->pid, ev->args[0], path, sizeof(path)) < 0)
-        snprintf(path, sizeof(path), "<ilegivel>"); // se falhar, coloca isso
-    
         snprintf(buf, bufsz, "execve(\"%s\", ...) = %ld",
-                path,      // o caminho que lemos
-                ev->ret);  // retorno
+                saved_execve_path,
+                ev->ret);. . 
 
-    } else if (syscall == 231) {
+    } else if (syscall == SYS_exit_group) {
         /* exit_group — você escreve aqui */
          snprintf(buf, bufsz, "exit_group(%ld)",
              ev->args[0]);
