@@ -23,7 +23,7 @@ static void fill_event_from_regs(pid_t pid,
     ev->pid = pid;
     ev->entering = entering;
 
-    if(entering != 0)
+    if(entering == 0)
     {
         ev->ret = regs->rax;
     }
